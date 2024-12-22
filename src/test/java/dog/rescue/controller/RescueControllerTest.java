@@ -2,6 +2,8 @@ package dog.rescue.controller;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.util.List;
+
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
@@ -35,5 +37,71 @@ class RescueControllerTest extends RescueServiceTestSupport {
 		// And: there is one row in the location table
 		assertThat(rowsInLocationTable()).isOne();
 	}
+	
+	@Test
+	void testRetrieveLocation() {
+		// Given a location
+		LocationData location = insertLocation(buildInsertLocation(1));
+		LocationData expected = buildInsertLocation(1);
+		
+		// When: the location is retrieved by the location ID
+		LocationData actual = retrieveLocation(location.getLocationId());
+		
+		// Then: the actual location is equal to the expected location
+		assertThat(actual).isEqualTo(expected);
+	}
+	
+	@Test
+	void testRetrieveAllLocations() {
+		// Given : two locations
+		List<LocationData> expected = insertTwoLocations();
+		
+		// When: all locations are retrieved
+		List<LocationData> actual = retrieveAllLocations();
+		
+		// Then: the retrieved locations are the same as expected.
+		assertThat(sorted(actual)).isEqualTo(sorted(expected));
+	}
+	
+	@Test
+	void testUpdateLocation() {
+		// Given: a location and an update request
+		insertLocation(buildInsertLocation(1));
+		LocationData expected = buildUpdateLocation();
+		
+		// When: the location is updated
+		LocationData actual = updateLocation(expected);
+		
+		// Then: the location is returned as expected
+		assertThat(actual).isEqualTo(expected);
+		
+		// And: there is one row in the location table
+		assertThat(rowsInLocationTable()).isOne();
+	}
 
+	@Test
+	void testDeleteLocationWithDogs() {
+		// Given: a location with two dogs
+		LocationData locationData = insertLocation(buildInsertLocation(1));
+		long locationId = locationData.getLocationId();
+		
+		insertDog(1);
+		insertDog(2);
+		
+		assertThat(rowsInLocationTable()).isOne();
+		assertThat(rowsInDogTable()).isEqualTo(2);
+		assertThat(rowsInDogBreedTable()).isEqualTo(4);
+		int breedRows = rowsInBreedTable();
+	
+		// When: the location is deleted
+		deleteLocation(locationId);
+		
+		// Then:: there are no location, dog, or dog_breed rows
+		assertThat(rowsInLocationTable()).isZero();
+		assertThat(rowsInDogTable()).isZero();
+		assertThat(rowsInDogBreedTable()).isZero();
+		
+		// And: the number of breed rows has not changed
+		assertThat(rowsInBreedTable()).isEqualTo(breedRows);
+	}	
 }
